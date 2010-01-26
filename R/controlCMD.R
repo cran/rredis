@@ -3,18 +3,25 @@
 `redisConnect` <-
 function(host='localhost', port=6379, returnRef=FALSE)
 {
-  con <- socketConnection(host, port,open='a+b')
+  connect <- FALSE
+  if(!exists("con",envir=.redisEnv)) connect <- TRUE
+  else if(!isOpen(.redisEnv$con)) connect <- TRUE
+  if(connect)
+   {
+    con <- socketConnection(host, port, open='a+b')
 # Stash state in the redis enivronment describing this connection:
-  assign('con',con,envir=.redisEnv)
-  assign('host',host,envir=.redisEnv)
-  assign('port',port,envir=.redisEnv)
-  tryCatch(.redisPP(), 
-    error=function(e) {
-      cat(paste('Error: ',e,'\n'))
-            close(con);
-            rm(list='con',envir=.redisEnv)
-          })
-  if(returnRef) return(list(con=con,host=host,port=port))
+    assign('con',con,envir=.redisEnv)
+    assign('host',host,envir=.redisEnv)
+    assign('port',port,envir=.redisEnv)
+    tryCatch(.redisPP(), 
+      error=function(e) {
+        cat(paste('Error: ',e,'\n'))
+              close(con);
+              rm(list='con',envir=.redisEnv)
+            })
+   }
+  if(returnRef) return(list(con=.redisEnv$con, host=.redisEnv$host,
+                            port=redisEnv$port))
   invisible()
 }
 
@@ -29,38 +36,38 @@ function()
 `redisAuth` <- 
 function(pwd)
 {
-  .sendCmd(.redismsg('AUTH',pwd))
+  .redisCmd(.raw('AUTH'), .raw(pwd))
 }
 
 `redisSave` <-
 function()
 {
-  .sendCmd(.redismsg('SAVE'))
+  .redisCmd(.raw('SAVE'))
 }
 
 `redisBgSave` <-
 function()
 {
-  .sendCmd(.redismsg('BGSAVE'))
+  .redisCmd(.raw('BGSAVE'))
 }
 
 `redisBgRewriteAOF` <-
 function()
 {
-  .sendCmd(.redismsg('BGREWRITEAOF'))
+  .redisCmd(.raw('BGREWRITEAOF'))
 }
 
 `redisShutdown` <-
 function()
 {
-  .sendCmd(.redismsg('SHUTDOWN'))
+  .redisCmd(.raw('SHUTDOWN'))
   remove(list='con',envir=.redisEnv)
 }
 
 `redisInfo` <-
 function()
 {
-  x <- .sendCmd(.redismsg('INFO'))
+  x <- .redisCmd(.raw('INFO'))
   z <- strsplit(x,'\r\n')
   w <- unlist(lapply(z,strsplit,':'))
   n <- length(w)
@@ -75,22 +82,22 @@ function()
 function(host,port)
 {
 # Use host="no" port="one" to disable slave replication
-  .sendCmd(.redismsg('SLAVEOF'),host,port)
+  .redisCmd(.raw('SLAVEOF'),.raw(as.character(host)), .raw(as.character(port)))
 }
 
 redisFlushDB <- function() {
-  .sendCmd(.redismsg('FLUSHDB'))
+  .redisCmd(.raw('FLUSHDB'))
 }
 
 redisFlushAll <- function() {
-  .sendCmd(.redismsg('FLUSHALL'))
+  .redisCmd(.raw('FLUSHALL'))
 }
 
 redisSelect <- function(index) {
-  .sendCmd(.redismsg('SELECT',index))
+  .redisCmd(.raw('SELECT'),.raw(as.character(index)))
 }
 
 redisDBSize <- function() {
-  .sendCmd(.redismsg('DBSIZE'))
+  .redisCmd(.raw('DBSIZE'))
 }
 
