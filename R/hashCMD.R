@@ -1,7 +1,11 @@
 # This file contains functions that operate on Redis 'hash' values.
 
-redisHGet <- function(key, field) {
-  .redisCmd(.raw('HGET'), .raw(key), .raw(field))
+redisHGet <- function(key, field, raw=FALSE) {
+  if(raw){
+    .redisRawCmd(.raw('HGET'), .raw(key), .raw(field))
+  }else{
+    .redisCmd(.raw('HGET'), .raw(key), .raw(field))
+  }
 }
 
 redisHSet <- function(key, field, value, NX=FALSE) {
@@ -59,7 +63,7 @@ redisHGetAll <- function(key)
 {
   retval <- NULL
   all <- .redisCmd(.raw('HGETALL'), .raw(key))
-  if(!is.null(all)) {
+  if(!is.null(all) && length(all)>1) {
     retval <- all[seq(2,length(all),by=2)]
     names(retval) <- all[seq(1,length(all),by=2)]
   }

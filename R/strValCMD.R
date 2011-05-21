@@ -10,9 +10,7 @@ redisSet <- function(key, value, NX=FALSE) {
   value <- .cerealize(value)
   cmd <- 'SET'
   if(NX) cmd <- 'SETNX'
-  retval <- .redisCmd(.raw(cmd), .raw(key), value)
-  if(NX) 1 == retval
-  else 'OK' == retval
+  .redisCmd(.raw(cmd), .raw(key), value)
 }
 
 redisGetSet <- function(key, value) {
@@ -25,19 +23,26 @@ redisMGet <- function(keys,raw=FALSE) {
     x <- do.call('.redisRawCmd',lapply(c(list('MGET'),keylist),charToRaw))
   else
     x <- do.call('.redisCmd',lapply(c(list('MGET'),keylist),charToRaw))
-  names(x) <- keylist
+# The following may not occur, for example within a transaction block:
+  if(length(x) == length(keylist)) names(x) <- keylist
   x
 }
 
 redisMSet <- function(keyvalues, NX=FALSE) {
+# Includes a significant performance improvement contributed
+# by William Pleasant.
   if (NX) cmd <- 'MSETNX' else cmd <- 'MSET'
   a <- c(alist(),list(.raw(cmd)))
+  l <- length(keyvalues)
+  length(a) <- l*2 + 1
   rawnames <- lapply(as.list(names(keyvalues)),charToRaw)
-  for(j in 1:length(keyvalues)) 
-    a <- c(a,list(rawnames[[j]],keyvalues[[j]]))
-  retval <- do.call('.redisCmd', a)
-  if(NX) 1 == retval
-  else 'OK' == retval
+  idx <- seq.int(from=2,to=l*2+1,by=2)
+  for(i in 1:l) {
+    j <- idx[i]
+    a[j] <- rawnames[i]
+    a[j+1] <- keyvalues[i]
+  }
+  do.call('.redisCmd', a)
 }
 
 redisIncr <- function(key)
