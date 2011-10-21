@@ -1,34 +1,49 @@
 # This file contains various control functions.
 
+# Basic response handler, only really useful in nonblocking cases
+# all function argument is left in for backward compatibility,
+# it is not used.
+`redisGetResponse` <- function(all=TRUE)
+{
+  if(!exists('count',where=.redisEnv$current)) return(.getResponse())
+  if(.redisEnv$current$count < 1) return(NULL)
+  replicate(.redisEnv$current$count, .getResponse(), simplify=FALSE)
+}
+
+`redisSetBlocking` <- function(value=TRUE)
+{
+  value <- as.logical(value)
+  if(is.na(value)) stop("logical value required")
+  assign('block',value,envir=.redisEnv$current)
+}
+
 `redisConnect` <-
 function(host='localhost', port=6379, returnRef=FALSE)
 {
-  connect <- FALSE
-  if(!exists("con",envir=.redisEnv)) connect <- TRUE
-  else if(!isOpen(.redisEnv$con)) connect <- TRUE
-  if(connect)
-   {
+  .redisEnv$current <- new.env()
 # R Windows appears to suffer from a serious problem affecting non-blocking
 # connections and readBin with raw data, see:
 # http://www.mail-archive.com/r-devel@r-project.org/msg16420.html.
 # We force blocking connections on Windows systems to work around this.
-    if(Sys.info()[[1]] == "Windows")
-      con <- socketConnection(host, port, open='a+b', blocking=TRUE)
-    else
-      con <- socketConnection(host, port, open='a+b')
+  if(Sys.info()[[1]] == "Windows")
+   con <- socketConnection(host, port, open='a+b', blocking=TRUE)
+  else
+    con <- socketConnection(host, port, open='a+b')
 # Stash state in the redis enivronment describing this connection:
-    assign('con',con,envir=.redisEnv)
-    assign('host',host,envir=.redisEnv)
-    assign('port',port,envir=.redisEnv)
-    tryCatch(.redisPP(), 
-      error=function(e) {
-        cat(paste('Error: ',e,'\n'))
-              close(con);
-              rm(list='con',envir=.redisEnv)
-            })
-   }
-  if(returnRef) return(list(con=.redisEnv$con, host=.redisEnv$host,
-                            port=.redisEnv$port))
+  assign('con',con,envir=.redisEnv$current)
+  assign('host',host,envir=.redisEnv$current)
+  assign('port',port,envir=.redisEnv$current)
+  assign('block',TRUE,envir=.redisEnv$current)
+# Count is for nonblocking communication, it keeps track of the number of
+# getResponse calls that are pending.
+  assign('count',0,envir=.redisEnv$current)
+  tryCatch(.redisPP(), 
+    error=function(e) {
+      cat(paste('Error: ',e,'\n'))
+            close(con);
+            rm(list='con',envir=.redisEnv$current)
+          })
+  if(returnRef) return(.redisEnv$current)
   invisible()
 }
 
@@ -37,7 +52,7 @@ function()
 {
   con <- .redis()
   close(con)
-  remove(list='con',envir=.redisEnv)
+  remove(list='con',envir=.redisEnv$current)
 }
 
 `redisAuth` <- 
@@ -68,14 +83,16 @@ function()
 function()
 {
   .redisCmd(.raw('SHUTDOWN'))
-  remove(list='con',envir=.redisEnv)
+  remove(list='con',envir=.redisEnv$current)
 }
 
 `redisInfo` <-
 function()
 {
   x <- .redisCmd(.raw('INFO'))
-  z <- strsplit(x,'\r\n')
+  z <- strsplit(x,'\r\n')[[1]]
+  rj <- c(grep("^$",z), grep("^#",z))
+  if(length(rj)>0) z <- z[-rj]
   w <- unlist(lapply(z,strsplit,':'))
   n <- length(w)
   e <- seq(from=2,to=n,by=2)
@@ -108,3 +125,15 @@ redisDBSize <- function() {
   .redisCmd(.raw('DBSIZE'))
 }
 
+redisGetContext <- function() {
+  .redisEnv$current
+}
+
+redisSetContext <- function(e=NULL)
+{
+  if(is.null(e)) .redisEnv$current <- .redisEnv
+  else {
+    if(!is.environment(e)) stop("Invalid context")
+    .redisEnv$current <- e
+  }
+}

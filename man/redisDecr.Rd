@@ -20,7 +20,7 @@ The new value of key after the decrement, returned as a character
 string.
 }
 \references{
-http://code.google.com/p/redis/wiki/IncrCommand
+http://redis.io/commands
 }
 \author{
 B. W. Lewis
@@ -31,7 +31,7 @@ B. W. Lewis
 }
 \examples{
 \dontrun{
-redisSet('x',5)
+redisSet('x','5')
 redisDecr('x')
 }
 }

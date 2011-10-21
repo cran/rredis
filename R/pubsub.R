@@ -9,9 +9,9 @@
       warning("Pattern subscription with multiple arguments")
   }
   x <- do.call('.redisCmd', c(list(.raw(cmd)),channels))
-  if(length(channels)>1) {
-    for(j in 1:(length(channels)-1)) x <- c(x, .getResponse())
-  }
+  len <- length(channels) - 1L
+  if(len > 0L)
+    x <- c(x, replicate(len, .getResponse(), simplify=FALSE))
   x
 }
 
@@ -25,21 +25,15 @@
     if(length(channels)>1) warning("Pattern subscription with multiple arguments")
   }
   x <- do.call('.redisCmd', c(list(.raw(cmd)),channels))
-  if(length(channels)>1) {
-    for(j in 1:(length(channels)-1)) x <- c(x, .getResponse())
-  }
+  len <- length(channels) - 1L
+  if(len > 0L)
+    x <- c(x, replicate(len, .getResponse(), simplify=FALSE))
   x
 }
 
 `redisPublish` <- function(channel, message)
 {
   do.call('.redisCmd', list(.raw('PUBLISH'),.raw(channel),message))
-}
-
-# Basic response handler
-`redisGetResponse` <- function()
-{
-  .getResponse()
 }
 
 # Callback handler

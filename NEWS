@@ -1,3 +1,8 @@
+1.6.3:
+- Support for new redisInfo format
+- Improved interrupt handling during communication
+- Minor man page fixes
+
 Significant changes in version 1.6:
 - Transactions are supported.
 - Pub/sub is supported.

@@ -82,7 +82,7 @@ redisZCard <- function(key)
 
 redisZScore <- function(key, element)
 {
-  ret <- .redisCmd(.raw('ZSCORE'), .raw(key), element)
+  ret <- .redisCmd(.raw('ZSCORE'), .raw(key), .raw(element))
   if(!is.null(ret)) ret <- as.numeric(ret)
   ret
 }
@@ -91,10 +91,10 @@ redisZScore <- function(key, element)
 {
   N <- length(keys)
   a <- c(alist(), list(.raw(type), .raw(dstkey), .raw(as.character(N))))
-  sets <- lapply(as.list(keys),charToRaw)
+  sets <- lapply(keys,charToRaw)
   a <- c(a, sets)
   if(!is.null(weights)) {
-    a <- c(a, list(.raw('WEIGHTS')), lapply(as.list(as.character(weights)), charToRaw))
+    a <- c(a, list(.raw('WEIGHTS')), lapply(as.character(weights), charToRaw))
   }
   if(!is.null(aggregate)) {
     a <- c(a, list(.raw('AGGREGATE'), .raw(aggregate)))
