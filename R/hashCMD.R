@@ -15,14 +15,6 @@ redisHSet <- function(key, field, value, NX=FALSE) {
   1 == .redisCmd(.raw(cmd), .raw(key), .raw(field), value)
 }
 
-redisHMSet <- function(key, values) {
-  a <- c(alist(),list(.raw('HMSET')))
-  fieldnames <- lapply(names(values), charToRaw)
-  a <- c(a, Map(list, fieldnames, values, USE.NAMES=FALSE))
-  retval <- do.call('.redisCmd', a)
-  'OK' == retval
-}
-
 redisHIncrBy <- function(key, field, value)
 {
   .redisCmd(.raw('HINCRBY'),.raw(key),.raw(field),.raw(as.character(value)))
@@ -40,7 +32,7 @@ redisHDel <- function(key, field)
 
 redisHLen <- function(key)
 {
-  .redisCmd(.raw('HDEL'), .raw(key))
+  .redisCmd(.raw('HLEN'), .raw(key))
 }
 
 redisHFields <- function(key)
@@ -67,4 +59,23 @@ redisHGetAll <- function(key)
     names(retval) <- all[seq(1,length(all),by=2)]
   }
   retval
+}
+
+redisHMGet <- function(key, fields) {
+  a <- c(alist(),list(.raw('HMGET')))
+  a <- c(a, lapply(c(key,fields), charToRaw))
+  retval <- do.call('.redisCmd', a)
+  if(length(retval) == length(fields)) names(retval) <- fields
+  retval
+}
+
+redisHMSet <- function(key, values) {
+  a <- c(alist(),list(.raw('HMSET')),list(.raw(key)))
+  fieldnames <- lapply(names(values), charToRaw)
+  for(j in 1:length(values)) {
+    a <- c(a, fieldnames[j])
+    if(is.character(values[[j]])) a <- c(a, list(charToRaw(values[[j]])))
+    else(a <- c(a,list(.cerealize(values[[j]]))))
+  }
+  do.call('.redisCmd', a)
 }
