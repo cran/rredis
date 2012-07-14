@@ -39,7 +39,7 @@ redisLIndex <- function(key, index) {
 redisLSet <- function(key, index, value) {
   key <- charToRaw(as.character(key))
   index <- charToRaw(as.character(index))
-  .redisCmd(.raw('LSET'), key, index, value) == 'OK'
+  .redisCmd(.raw('LSET'), key, index, value)
 }
 
 redisLRem <- function(key, count, value) {
@@ -72,4 +72,9 @@ redisBLPop <- function(keys, timeout=0) {
     names(x) <- n
   }
   x
+}
+
+redisBRPopLPush <- function(src, dest, timeout=0) {
+  tout <- as.character(timeout)
+  .redisCmd(.raw('BRPOPLPUSH'), .raw(src), .raw(dest), .raw(tout))
 }
