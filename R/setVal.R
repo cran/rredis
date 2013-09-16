@@ -1,37 +1,59 @@
+# A utility function that strips a named argument 'raw' from the list.
+# This function returns a list with two items:
+# 1. The stripped list without the raw=whatever entry
+# 2. The value of the named raw=whatever entry
+#
+# Use this with functions that have variable length arument lists.
+.redisStripRawArg <- function(List)
+{
+  ir <- which(names(List) %in% "raw")
+  raw <- c()
+  if(length(ir)>0)
+  {
+    raw <- List[[ir]]
+    List <- List[-ir]
+  }
+  list(List=List, raw=raw)
+}
+
+# Generic set operation
+.redisSetOp <- function(cmd, keys, ...)
+{
+  L <- .redisStripRawArg(list(...))
+  sets <- c(as.list(keys),L$List)
+  call <- lapply(c(list(cmd),sets),charToRaw)
+  if(!is.null(L$raw)) call <- c(call,raw=L$raw)
+  do.call(".redisCmd", call)
+}
+
 redisSInter <- function(keys, ...)
 {
-  sets <- c(as.list(keys),list(...))
-  do.call('.redisCmd',lapply(c(list('SINTER'),sets),charToRaw))
+  .redisSetOp("SINTER", keys, ...)
 }
 
 redisSUnion <- function(keys, ...)
 {
-  sets <- c(as.list(keys),list(...))
-  do.call('.redisCmd',lapply(c(list('SUNION'),sets),charToRaw))
+  .redisSetOp("SUNION", keys, ...)
 }
 
 redisSUnionStore <- function(dest, keys, ...)
 {
-  sets <- c(as.list(dest),as.list(keys),list(...))
-  do.call('.redisCmd',lapply(c(list('SUNIONSTORE'),sets),charToRaw))
+  .redisSetOp("SUNIONSTORE", keys, ...)
 }
 
 redisSInterStore <- function(dest, keys, ...)
 {
-  sets <- c(as.list(dest),as.list(keys),list(...))
-  do.call('.redisCmd',lapply(c(list('SINTERSTORE'),sets),charToRaw))
+  .redisSetOp("SINTERSTORE", keys, ...)
 }
 
 redisSDiff <- function(keys, ...)
 {
-  sets <- c(as.list(keys),list(...))
-  do.call('.redisCmd',lapply(c(list('SDIFF'),sets),charToRaw))
+  .redisSetOp("SDIFF", keys, ...)
 }
 
 redisSDiffStore <- function(dest, keys, ...)
 {
-  sets <- c(as.list(dest),as.list(keys),list(...))
-  do.call('.redisCmd',lapply(c(list('SDIFFSTORE'),sets),charToRaw))
+  .redisSetOp("SDIFFSTORE", keys, ...)
 }
 
 redisSIsMember <- function(set, element)
@@ -41,9 +63,9 @@ redisSIsMember <- function(set, element)
   1 == .redisCmd(.raw('SISMEMBER'),.raw(set),.raw(element))
 }
 
-redisSRandMember <- function(set)
+redisSRandMember <- function(set,...)
 {
-  .redisCmd(.raw('SRANDMEMBER'),.raw(set))
+  .redisCmd(.raw('SRANDMEMBER'),.raw(set),...)
 }
 
 redisSAdd <- function(set, element)
@@ -51,14 +73,14 @@ redisSAdd <- function(set, element)
   .redisCmd(.raw('SADD'),.raw(set),element)
 }
 
-redisSPop <- function(set)
+redisSPop <- function(set,...)
 {
-  .redisCmd(.raw('SPOP'),.raw(set))
+  .redisCmd(.raw('SPOP'),.raw(set),...)
 }
 
-redisSMembers <- function(set)
+redisSMembers <- function(set,...)
 {
-  .redisCmd(.raw('SMEMBERS'),.raw(set))
+  .redisCmd(.raw('SMEMBERS'),.raw(set),...)
 }
 
 redisSRem <- function(set, element)
