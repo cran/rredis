@@ -615,7 +615,7 @@ that substantially benefit from it.
 
 \subsection{Enabling TCP\_NODELAY}
 
-Enabling the TCP\_NODELAY options is one performance approach that hiredis (the
+Enabling the TCP\_NODELAY option is one performance approach that hiredis (the
 official Redis C library client) takes: see
 \htmladdnormallink{https://github.com/redis/hiredis}{https://github.com/redis/hiredis}.
 We don't generally recommend this approach, especially if you're running Redis
@@ -785,7 +785,7 @@ open Redis connections:
 
 And then the normal \verb+redisSet+ and \verb+redisGet+ functions work again!
 Similarly rename any other renamed Redis commands. Note that this renaming
-strategy applies to the current running R session (not that it applies to
+strategy applies to the current running R session (it applies to
 {\it all} open Redis connections in that session). 
 
 \subsection{Authentication}

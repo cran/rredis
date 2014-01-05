@@ -14,19 +14,30 @@
 
 .openConnection <- function(host, port, nodelay=FALSE, timeout=2678399L, envir=rredis:::.redisEnv$current)
 {
-  stopifnot(typeof(host)=="character")
-  stopifnot(class(port)=="numeric")
-  stopifnot(typeof(nodelay)=="logical")
-# We track the file descriptor of the new connection in a sneaky way
-  fds <- rownames(showConnections(all=TRUE))
-  con <- socketConnection(host, port, open="a+b",
-                          blocking=TRUE, timeout=timeout)
-  fd <- rownames(showConnections(all=TRUE))
-  fd <- as.integer(setdiff(fd,fds))
+  stopifnot(is.character(host))
+  stopifnot(is.numeric(port))
+  stopifnot(is.logical(nodelay))
+# We track the file descriptor of the new connection in a crude way
+#  fds <- rownames(showConnections(all=TRUE)) # this doesn't work FYI
+  fd = NULL
   if(nodelay)
   {
+    fds <- .Call("OPEN_FD",PACKAGE="rredis")
+  }
+  con <- socketConnection(host, port, open="a+b",
+                          blocking=TRUE, timeout=timeout)
+  if(nodelay)
+  {
+    fd <- as.integer(setdiff(.Call("OPEN_FD",PACKAGE="rredis"),fds))
+  }
+  if(length(fd)>0 && nodelay)
+  {
     Nagle <- .Call("SOCK_NAGLE",fd,1L,PACKAGE="rredis")
-    if(Nagle!=1) warning("Unable to set nodelay.")
+    if(Nagle!=1)
+    {
+      nodelay <- FALSE
+      warning("Unable to set nodelay.")
+    }
   }
 # Stash state in the redis enivronment describing this connection:
   assign('fd',fd,envir=envir)
