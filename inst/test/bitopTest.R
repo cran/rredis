@@ -1,5 +1,3 @@
-options('redis:num'=TRUE) # many tests assume : returns numeric
-
 test01_connect <- function() {
   redisConnect()
   if(!is.null(redisKeys("bitmapr_test*"))){

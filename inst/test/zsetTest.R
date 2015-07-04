@@ -1,5 +1,3 @@
-options('redis:num'=TRUE) # many tests assume : returns numeric
-
 test01_connect <- function()
 {
   redisConnect()
@@ -62,4 +60,10 @@ test13_redisZInterStore <- function()
 test14_redisZRemRangeByRank <- function()
 {
   checkEquals(1, redisZRemRangeByRank("B",0,1))
+}
+
+test15_redisSort <- function()
+{
+  checkEquals(TRUE, all(c("x","y","z") == unlist(redisSort("A",alpha=TRUE,decreasing=FALSE))))
+  checkEquals(TRUE, all(c("z","y","x") == unlist(redisSort("A",alpha=TRUE,decreasing=TRUE))))
 }

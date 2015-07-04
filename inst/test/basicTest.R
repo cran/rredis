@@ -1,5 +1,3 @@
-options('redis:num'=TRUE) # many tests assume : returns numeric
-
 test01_connect <- function() {
   redisConnect()
 }
@@ -132,3 +130,4 @@ test19_setmsetnx <- function() {
   checkEquals(1, redisMSet(list(foo=1,bar=2), NX=TRUE))
   redisDelete(c('foo','bar'))
 }
+
